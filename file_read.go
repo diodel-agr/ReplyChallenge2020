@@ -51,7 +51,7 @@ func readMap(r *bufio.Reader, W, H int) (int, *[][]Node) {
 		line, err := readln(r)
 		check(err)
 		for j := 0; j < W; j++ {
-			layout[i][j] = Node{line[j], nil}
+			layout[i][j] = Node{0, line[j], nil}
 			if line[j] != '#' {
 				available++
 			}

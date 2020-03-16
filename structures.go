@@ -41,12 +41,13 @@ func (r Replyer) toString() string {
 // @nodeType: character used to code the type of the element.
 // @occupant: pointer to a Replyer object.
 type Node struct {
+	ccid     int  // connected component id.
 	nodeType byte // '#' or '_' or 'M'.
 	occupant *Replyer
 }
 
 func (n Node) toString() string {
-	return string(n.nodeType)
+	return "(" + strconv.Itoa(n.ccid) + ")" + string(n.nodeType)
 }
 
 // Office - structure used to store the information regarding the floor.

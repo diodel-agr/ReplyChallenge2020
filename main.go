@@ -17,5 +17,5 @@ func main() {
 	}
 	fmt.Println()
 	// get best solution :)
-
+	findSolution(&data)
 }
