@@ -2,64 +2,64 @@ package main
 
 import "fmt"
 
+// Pair - structure used to store a pair of desks.
+// The pairs can be either developer-developer, manager-manager or mixed.
+type Pair struct {
+	x0, y0, x1, y1 int
+}
+
 // ConnectedComponent - structure used to store the information regarding a connected component.
 type ConnectedComponent struct {
-	x, y  int // position of the first tile of the component.
-	ccid  int // id of he component.
-	count int // number of total positions from a cc.
+	ccid       int // id of he component.
+	d, m, x    []Pair
+	di, mi, xi int
 }
 
-// tileIsCompatible - function used to check wehter the ndoe at position [@i, @j] is compatible with one of the types: @tile0 or @tile1.
-// @return: 0 if the node is compatible with @tile0, 1 if the node is compatible with the @tile1 or -1 otherwise.
-func tileIsCompatible(office *Office, i, j int, tile0, tile1 byte) int {
-	if i < 0 || i >= office.H || j < 0 || j >= office.W {
-		return -1
-	}
-	node := office.layout[i][j]
-	if node.nodeType == tile0 {
-		return 0
-	} else if node.nodeType == tile1 {
-		return 1
-	}
-	return -1
+// NewCC - function used to create a new ConnectedComponent variable.
+func NewCC(id int) ConnectedComponent {
+	return ConnectedComponent{id, []Pair{}, []Pair{}, []Pair{}, 0, 0, 0}
 }
 
-// next - this function is used to return the positions of two nodes.
-// The types of these nodes correspond to the types of the 2 parameters @tile 0 and @tile1.
-func (cc *ConnectedComponent) next(office *Office) func(tile0, tile1 byte) (x0, y0, x1, y1 int) {
-	path := stack.New()
-	i, j := cc.x, cc.y
-	result := func(tile0, tile1 byte) (x0, y0, x1, y1 int) {
-		// invalid position.
-		if i < 0 || i >= office.H || j < 0 || j >= office.W {
-			return -1, -1, -1, -1
-		}
-		node := office.layout[i][j]
-		// not the current cc.
-		if node.ccid != cc.ccid {
-			return -1, -1, -1, -1
-		}
-		// search 2 free tiles.
-		if tile0 == tile1 {
-			// if the current position is free and the desk is compatible with one of the tiles.
-			if node.occupant == nil && (tile0 == node.nodeType || tile1 == node.nodeType) {
-				// check if this position and one next to this one (up, down, left or right) are compatible.
-
+func (office *Office) checkRightDownPair(cc *ConnectedComponent, i, j int) {
+	this := office.layout[i][j]
+	// check right.
+	if j+1 < office.W {
+		right := office.layout[i][j+1]
+		if right.nodeType != '#' {
+			// assign the pair (this, right) to the corresponding slice.
+			if this.nodeType == right.nodeType && this.nodeType == '_' { // developer desks.
+				cc.d = append(cc.d, Pair{i, j, i, j + 1})
+			} else if this.nodeType == right.nodeType && this.nodeType == 'M' { // manager desks.
+				cc.m = append(cc.m, Pair{i, j, i, j + 1})
+			} else { // mixed desks.
+				cc.x = append(cc.x, Pair{i, j, i, j + 1})
 			}
-		} else {
-
 		}
-
 	}
-	return result
+	// check down.
+	if i+1 < office.H {
+		down := office.layout[i+1][j]
+		if down.nodeType != '#' {
+			// assign the pair (this, down) to the corresponding slice.
+			if this.nodeType == down.nodeType && this.nodeType == '_' { // developer desks.
+				cc.d = append(cc.d, Pair{i, j, i + 1, j})
+			} else if this.nodeType == down.nodeType && this.nodeType == 'M' { // manager desks.
+				cc.m = append(cc.m, Pair{i, j, i + 1, j})
+			} else { // mixed desks.
+				cc.x = append(cc.x, Pair{i, j, i + 1, j})
+			}
+		}
+	}
 }
 
 func (office *Office) expandConnectedComponent(cc *ConnectedComponent, i, j int) {
+	// check if the position is valid.
 	if i >= 0 && i < office.H && j >= 0 && j < office.W {
 		if office.layout[i][j].nodeType != '#' && office.layout[i][j].ccid == 0 {
 			// assign ccid.
 			office.layout[i][j].ccid = cc.ccid
-			cc.count++
+			// check for nearby pairs (only right and down).
+			office.checkRightDownPair(cc, i, j)
 			// expand up.
 			office.expandConnectedComponent(cc, i-1, j)
 			// expand down.
@@ -78,9 +78,9 @@ func (office *Office) getConnectedComponents() []ConnectedComponent {
 	for i := 0; i < office.H; i++ {
 		for j := 0; j < office.W; j++ {
 			if office.layout[i][j].nodeType != '#' && office.layout[i][j].ccid == 0 {
-				// found new tile which is not allocated to any connected compnent.
+				// found new tile which is not allocated to any connected component.
 				// create new connected component.
-				cc := ConnectedComponent{i, j, ccid, 0}
+				cc := NewCC(ccid)
 				ccid++
 				// expand cc.
 				office.expandConnectedComponent(&cc, i, j)
@@ -94,37 +94,92 @@ func (office *Office) getConnectedComponents() []ConnectedComponent {
 // next - function used to return the next available position for a manager or a developer.
 // @tile0, @tile1: 'm' for manager, 'd' for developer.
 // @return: tuple of x and y coordinates.
-func (office *Office) next() (f func(tile0, tile1 byte) (x0, y0, x1, y1 int)) {
-	cc := office.getConnectedComponents()
+func (office *Office) next() func(tile0, tile1 byte) *Pair {
+	ccSlice := office.getConnectedComponents()
 	fmt.Println(office.toString())
-	fmt.Println("Found", len(cc), "connected components")
-	ccidx := 0
-	i, j := 0, 0 // the current position of a free position.
+	fmt.Println("Found", len(ccSlice), "connected components")
 	// define the function.
-	result := func(tile0, tile1 byte) (x0, y0, x1, y1 int) {
-		// check to see wether there are available spaces in the current connected component.
-		for ccidx < len(cc) && cc[ccidx].count <= 1 {
-			ccidx++
-			i, j = cc[ccidx].x, cc[ccidx].y
-		}
-		// chech to see if there are more connected components to explore.
-		if ccidx >= len(cc) {
-			return -1, -1, -1, -1
-		}
-		// search the next free position in the current cc.
-		for ; i < office.W; i++ {
-			for ; j < office.H; j++ {
-				if office.layout[i][j].occupant == nil && office.layout[i][j].nodeType != '#' {
-					// we have a available space.
-				}
+	result := func(tile0, tile1 byte) *Pair {
+		// iterate over the connected components until you find a position for the (tile0, tile1) pair.
+		for ccidx := 0; ccidx < len(ccSlice); ccidx++ {
+			cc := ccSlice[ccidx]
+			pairSlice := cc.x // initialise with the mixed slice.
+			pairIndex := &cc.xi
+			if tile0 == tile1 && tile0 == '_' { // pair of developers.
+				pairSlice = cc.d
+				pairIndex = &cc.di
+			} else if tile0 == tile1 && tile0 == 'M' { // pair of managers.
+				pairSlice = cc.m
+				pairIndex = &cc.mi
 			}
+			// check if the current slice has enough pairs.
+			if *pairIndex == len(pairSlice) {
+				continue
+			}
+			// check if the pair has both desks available.
+			pair := pairSlice[*pairIndex]
+			for *pairIndex < len(pairSlice) && office.layout[pair.x0][pair.y0].occupant != nil && office.layout[pair.x1][pair.y1].occupant != nil {
+				*pairIndex = *pairIndex + 1
+				pair = pairSlice[*pairIndex]
+			}
+			// check if the current slice has enough pairs.
+			if *pairIndex == len(pairSlice) {
+				continue
+			}
+			*pairIndex = *pairIndex + 1
+			return &pair
 		}
-		return 0, 0, 0, 0
-	}
+		return nil
+	} // end of function definition.
 	return result
 }
 
-func findSolution(data *Data) {
-	data.office.next()
-	return
+func (office *Office) placeReplyer(pair *Pair, r, s *Replyer) int {
+	if r.replType != s.replType && s.replType == office.layout[pair.x0][pair.y0].nodeType {
+		office.layout[pair.x0][pair.y0].occupant = s
+		office.layout[pair.y0][pair.y1].occupant = r
+		return 1
+	}
+	office.layout[pair.x0][pair.y0].occupant = r
+	office.layout[pair.y0][pair.y1].occupant = s
+	return 0
+}
+
+type Pos struct {
+	x, y int
+}
+
+func findSolution(data *Data) []string {
+	positions := make(map[*Replyer]*Pos)
+	// obtain 'next' function.
+	next := data.office.next()
+	// compute total potential and create max heap.
+	maxHeap := *data.computeTotalPotential()
+	// obtain a solution.
+	// iterate over each tile.
+	for maxHeap.size != 0 {
+		// get the best pair of replyers.
+		best := maxHeap.remove()
+		// check if either of them is already placed.
+		if positions[best.r] != nil && positions[best.s] != nil {
+			pair := next(best.r.replType, best.s.replType)
+			if pair != nil {
+				// place the 2 replyers to the correspoding place.
+				order := data.office.placeReplyer(pair, best.r, best.s)
+				if order == 0 {
+					positions[best.s] = &Pos{pair.x0, pair.y0}
+					positions[best.r] = &Pos{pair.x1, pair.y1}
+				} else {
+					positions[best.r] = &Pos{pair.x0, pair.y0}
+					positions[best.s] = &Pos{pair.x1, pair.y1}
+				}
+			} else {
+				fmt.Println("Pair not found for ", best.r.toString(), ":", best.s.toString())
+			}
+		} // -> if either of them is placed...good luck!
+	}
+	// create the result, by iterating the developers and managers slice and checking the positions into the positoions map.
+	result := make([]string, len(data.devs)+len(data.mans))
+	// ihi
+	return result
 }
