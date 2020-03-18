@@ -1,6 +1,14 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
+
+// Pos - structure used to store the position of a replyer.
+type Pos struct {
+	x, y int
+}
 
 // Pair - structure used to store a pair of desks.
 // The pairs can be either developer-developer, manager-manager or mixed.
@@ -10,7 +18,7 @@ type Pair struct {
 
 // ConnectedComponent - structure used to store the information regarding a connected component.
 type ConnectedComponent struct {
-	ccid       int // id of he component.
+	ccid       int // id of the component.
 	d, m, x    []Pair
 	di, mi, xi int
 }
@@ -100,17 +108,23 @@ func (office *Office) next() func(tile0, tile1 byte) *Pair {
 	fmt.Println("Found", len(ccSlice), "connected components")
 	// define the function.
 	result := func(tile0, tile1 byte) *Pair {
+		fmt.Println("Finding pair for:", tile0, tile1)
 		// iterate over the connected components until you find a position for the (tile0, tile1) pair.
 		for ccidx := 0; ccidx < len(ccSlice); ccidx++ {
 			cc := ccSlice[ccidx]
+			fmt.Println(cc.ccid, cc.di, cc.mi, cc.xi)
 			pairSlice := cc.x // initialise with the mixed slice.
 			pairIndex := &cc.xi
-			if tile0 == tile1 && tile0 == '_' { // pair of developers.
+			if tile0 == tile1 && tile0 == 'd' { // pair of developers.
+				fmt.Println("Dev pair.")
 				pairSlice = cc.d
 				pairIndex = &cc.di
-			} else if tile0 == tile1 && tile0 == 'M' { // pair of managers.
+			} else if tile0 == tile1 && tile0 == 'm' { // pair of managers.
+				fmt.Println("Man pair")
 				pairSlice = cc.m
 				pairIndex = &cc.mi
+			} else {
+				fmt.Println("Mixed pair")
 			}
 			// check if the current slice has enough pairs.
 			if *pairIndex == len(pairSlice) {
@@ -120,13 +134,16 @@ func (office *Office) next() func(tile0, tile1 byte) *Pair {
 			pair := pairSlice[*pairIndex]
 			for *pairIndex < len(pairSlice) && office.layout[pair.x0][pair.y0].occupant != nil && office.layout[pair.x1][pair.y1].occupant != nil {
 				*pairIndex = *pairIndex + 1
-				pair = pairSlice[*pairIndex]
+				if *pairIndex < len(pairSlice) {
+					pair = pairSlice[*pairIndex]
+				}
 			}
 			// check if the current slice has enough pairs.
 			if *pairIndex == len(pairSlice) {
 				continue
 			}
 			*pairIndex = *pairIndex + 1
+			fmt.Println("cc:", cc.ccid, "New pairIndex:", *pairIndex, "In cc:", cc.di, cc.mi, cc.xi)
 			return &pair
 		}
 		return nil
@@ -137,16 +154,12 @@ func (office *Office) next() func(tile0, tile1 byte) *Pair {
 func (office *Office) placeReplyer(pair *Pair, r, s *Replyer) int {
 	if r.replType != s.replType && s.replType == office.layout[pair.x0][pair.y0].nodeType {
 		office.layout[pair.x0][pair.y0].occupant = s
-		office.layout[pair.y0][pair.y1].occupant = r
+		office.layout[pair.x1][pair.y1].occupant = r
 		return 1
 	}
 	office.layout[pair.x0][pair.y0].occupant = r
-	office.layout[pair.y0][pair.y1].occupant = s
+	office.layout[pair.x1][pair.y1].occupant = s
 	return 0
-}
-
-type Pos struct {
-	x, y int
 }
 
 func findSolution(data *Data) []string {
@@ -155,15 +168,22 @@ func findSolution(data *Data) []string {
 	next := data.office.next()
 	// compute total potential and create max heap.
 	maxHeap := *data.computeTotalPotential()
+	// fmt.Println("The Max Heap is ")
+	// for i := 0; i < maxHeap.size; i++ {
+	// 	fmt.Print(strconv.Itoa(maxHeap.remove().value) + " ")
+	// }
+	// fmt.Println()
 	// obtain a solution.
 	// iterate over each tile.
 	for maxHeap.size != 0 {
 		// get the best pair of replyers.
 		best := maxHeap.remove()
+		fmt.Println("Best pair: ", best.r.toString(), ":", best.s.toString())
 		// check if either of them is already placed.
-		if positions[best.r] != nil && positions[best.s] != nil {
+		if positions[best.r] == nil && positions[best.s] == nil {
 			pair := next(best.r.replType, best.s.replType)
 			if pair != nil {
+				fmt.Println("Pair: [", pair.x0, ":", pair.y0, "] [", pair.x1, ":", pair.y1, "]")
 				// place the 2 replyers to the correspoding place.
 				order := data.office.placeReplyer(pair, best.r, best.s)
 				if order == 0 {
@@ -176,10 +196,29 @@ func findSolution(data *Data) []string {
 			} else {
 				fmt.Println("Pair not found for ", best.r.toString(), ":", best.s.toString())
 			}
-		} // -> if either of them is placed...good luck!
+		} else { // -> if either of them is placed...good luck!
+			fmt.Println("One of them is already placed.")
+		}
 	}
 	// create the result, by iterating the developers and managers slice and checking the positions into the positoions map.
-	result := make([]string, len(data.devs)+len(data.mans))
-	// ihi
+	result := []string{}
+	// developers.
+	for i := 0; i < len(data.devs); i++ {
+		pos := positions[&data.devs[i]]
+		if pos != nil {
+			result = append(result, strconv.Itoa(pos.x)+" "+strconv.Itoa(pos.y))
+		} else {
+			result = append(result, "X")
+		}
+	}
+	// managers.
+	for i := 0; i < len(data.mans); i++ {
+		pos := positions[&data.mans[i]]
+		if pos != nil {
+			result = append(result, strconv.Itoa(pos.x)+" "+strconv.Itoa(pos.y))
+		} else {
+			result = append(result, "X")
+		}
+	}
 	return result
 }
