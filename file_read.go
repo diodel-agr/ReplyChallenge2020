@@ -36,34 +36,30 @@ func readHW(r *bufio.Reader) (int, int) {
 	line, err := readln(r)
 	check(err)
 	i := strings.Index(line, " ")
-	W, err := strconv.ParseInt(line[:i], IntConvBase10, IntBitSize64)
+	W, err := strconv.ParseInt(line[:i], intConvBase10, intBitSize64)
 	check(err)
-	H, err := strconv.ParseInt(line[i+1:], IntConvBase10, IntBitSize64)
+	H, err := strconv.ParseInt(line[i+1:], intConvBase10, intBitSize64)
 	check(err)
 	return int(W), int(H)
 }
 
-func readMap(r *bufio.Reader, W, H int) (int, *[][]Node) {
+func readMap(r *bufio.Reader, W, H int) *[][]Node {
 	layout := make([][]Node, H)
-	available := 0
 	for i := 0; i < H; i++ {
 		layout[i] = make([]Node, W)
 		line, err := readln(r)
 		check(err)
 		for j := 0; j < W; j++ {
 			layout[i][j] = Node{0, line[j], nil}
-			if line[j] != '#' {
-				available++
-			}
 		}
 	}
-	return available, &layout
+	return &layout
 }
 
 func readDevs(r *bufio.Reader, data *Data, cid, sid *int) *[]Replyer {
 	line, err := readln(r)
 	check(err)
-	D, err := strconv.ParseInt(line, IntConvBase10, IntBitSize64) // numbers of developers.
+	D, err := strconv.ParseInt(line, intConvBase10, intBitSize64) // numbers of developers.
 	check(err)
 	// read D developers.
 	devs := make([]Replyer, D)
@@ -81,12 +77,12 @@ func readDevs(r *bufio.Reader, data *Data, cid, sid *int) *[]Replyer {
 		// bonus.
 		b := strings.Index(line[c+1:], " ")
 		b = b + c + 1
-		B, err := strconv.ParseInt(line[c+1:b], IntConvBase10, IntBitSize64) // bonus.
+		B, err := strconv.ParseInt(line[c+1:b], intConvBase10, intBitSize64) // bonus.
 		check(err)
 		// number of skills.
 		s := strings.Index(line[b+1:], " ")
 		s = s + b + 1
-		S, err := strconv.ParseInt(line[b+1:s], IntConvBase10, IntBitSize64) // number of skills.
+		S, err := strconv.ParseInt(line[b+1:s], intConvBase10, intBitSize64) // number of skills.
 		check(err)
 		// skills.
 		setOfSkills := make([]int, S)
@@ -116,7 +112,7 @@ func readDevs(r *bufio.Reader, data *Data, cid, sid *int) *[]Replyer {
 func readMans(r *bufio.Reader, data *Data, cid, sid *int) *[]Replyer {
 	line, err := readln(r)
 	check(err)
-	M, err := strconv.ParseInt(line, IntConvBase10, IntBitSize64) // numbers of managers.
+	M, err := strconv.ParseInt(line, intConvBase10, intBitSize64) // numbers of managers.
 	check(err)
 	// read managers.
 	mans := make([]Replyer, M)
@@ -138,7 +134,7 @@ func readMans(r *bufio.Reader, data *Data, cid, sid *int) *[]Replyer {
 		} else {
 			b = b + c + 1
 		}
-		B, err := strconv.ParseInt(line[c+1:b], IntConvBase10, IntBitSize64) // bonus.
+		B, err := strconv.ParseInt(line[c+1:b], intConvBase10, intBitSize64) // bonus.
 		check(err)
 		// create new manager.
 		mans[i] = Replyer{'m', data.companies[C], int(B), nil}
@@ -155,14 +151,14 @@ func readFile(path string, fname string) *Data {
 	// read M and N.
 	W, H := readHW(r)
 	// read the map.
-	available, layout := readMap(r, W, H)
-	office := Office{int(W), int(H), available, *layout}
+	layout := readMap(r, W, H)
+	office := Office{int(W), int(H), *layout}
 	// read the developers.
 	companies := make(map[string]int)
 	cid := 1 // company id.
 	skills := make(map[string]int)
 	sid := 1 // skill id.
-	data := Data{office, nil, nil, companies, skills}
+	data := Data{office, nil, nil, companies, skills, nil, nil, nil, nil}
 	devs := readDevs(r, &data, &cid, &sid)
 	// read the managers.
 	mans := readMans(r, &data, &cid, &sid)

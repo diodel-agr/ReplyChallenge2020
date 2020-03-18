@@ -6,8 +6,13 @@ import (
 )
 
 const (
-	IntBitSize64  int = 64
-	IntConvBase10 int = 10
+	intBitSize64  int = 64
+	intConvBase10 int = 10
+)
+
+const (
+	replyerDev byte = 'd'
+	replyerMan byte = 'm'
 )
 
 // Replyer - structure used to store the information of a replyer (developer or manager)
@@ -24,18 +29,24 @@ type Replyer struct {
 
 func (r Replyer) toString() string {
 	result := string(r.replType) + " " +
-		strconv.FormatInt(int64(r.company), IntConvBase10) + " " +
-		strconv.FormatInt(int64(r.bonus), IntConvBase10)
+		strconv.FormatInt(int64(r.company), intConvBase10) + " " +
+		strconv.FormatInt(int64(r.bonus), intConvBase10)
 	if r.skills != nil {
 		result += " ["
 		for i := 0; i < len(r.skills); i++ {
-			result += " " + strconv.FormatInt(int64(r.skills[i]), IntConvBase10)
+			result += " " + strconv.FormatInt(int64(r.skills[i]), intConvBase10)
 		}
 		result += " ]"
 	}
 	return result
 
 }
+
+const (
+	nodeWall    byte = '#'
+	nodeDeskDev byte = '_'
+	nodeDeskMan byte = 'M'
+)
 
 // Node - structure used to store the type of the floor element: wall, developer desk or manager desk.
 // @nodeType: character used to code the type of the element.
@@ -57,7 +68,6 @@ func (n Node) toString() string {
 // layout: the map of the floor.
 type Office struct {
 	W, H   int
-	vacant int // number of free places.
 	layout [][]Node
 }
 
@@ -86,10 +96,14 @@ type Data struct {
 	mans      []Replyer
 	companies map[string]int // the list of all companies.
 	skills    map[string]int // the list of all strings.
+	heapDev   *maxheap       // max-heap of developers pair.
+	heapMan   *maxheap       // max-heap of managers pair.
+	heapMix   *maxheap       // max-heap of manager-developer pair.
+	scoreMap  *map[*Replyer]map[*Replyer]int
 }
 
 func (d Data) toString() string {
-	// map.
+	// office.
 	result := "Map:\n" + d.office.toString() + "\nDevelopers:\n"
 	// developers.
 	size := len(d.devs)
@@ -106,5 +120,38 @@ func (d Data) toString() string {
 	result += "\nCompanies: " + fmt.Sprintf("%v", d.companies) + "\n"
 	// skills.
 	result += "\nSkills: " + fmt.Sprintf("%v", d.skills)
+	// heapDev.
+	result += "HeapDev: " + d.heapDev.toString() + "\n"
+	// heapMan.
+	result += "HeapMan: " + d.heapMan.toString() + "\n"
+	// heapMix.
+	result += "HeapMix: " + d.heapMix.toString() + "\n"
+	// scoreMap.
+	for i := 0; i < len(d.scoreMap); i++ {
+		result += d.scoreMap[i] + "\n"
+	}
 	return result
+}
+
+// Pos - structure used to store the position of a replyer.
+type Pos struct {
+	x, y int
+}
+
+// Pair - structure used to store a pair of desks.
+// The pairs can be either developer-developer, manager-manager or mixed.
+type Pair struct {
+	pos0, pos1 Pos
+}
+
+// ConnectedComponent - structure used to store the information regarding a connected component.
+type ConnectedComponent struct {
+	ccid  int // id of the component.
+	count int // the number of elements in the component.
+	pos   Pos // the position of the first element of this component.
+}
+
+// NewCC - function used to create a new ConnectedComponent variable.
+func NewCC(id int, pos Pos) ConnectedComponent {
+	return ConnectedComponent{id, 0, pos}
 }

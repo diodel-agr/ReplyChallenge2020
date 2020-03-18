@@ -5,69 +5,14 @@ import (
 	"strconv"
 )
 
-// Pos - structure used to store the position of a replyer.
-type Pos struct {
-	x, y int
-}
-
-// Pair - structure used to store a pair of desks.
-// The pairs can be either developer-developer, manager-manager or mixed.
-type Pair struct {
-	x0, y0, x1, y1 int
-}
-
-// ConnectedComponent - structure used to store the information regarding a connected component.
-type ConnectedComponent struct {
-	ccid       int // id of the component.
-	d, m, x    []Pair
-	di, mi, xi int
-}
-
-// NewCC - function used to create a new ConnectedComponent variable.
-func NewCC(id int) ConnectedComponent {
-	return ConnectedComponent{id, []Pair{}, []Pair{}, []Pair{}, 0, 0, 0}
-}
-
-func (office *Office) checkRightDownPair(cc *ConnectedComponent, i, j int) {
-	this := office.layout[i][j]
-	// check right.
-	if j+1 < office.W {
-		right := office.layout[i][j+1]
-		if right.nodeType != '#' {
-			// assign the pair (this, right) to the corresponding slice.
-			if this.nodeType == right.nodeType && this.nodeType == '_' { // developer desks.
-				cc.d = append(cc.d, Pair{i, j, i, j + 1})
-			} else if this.nodeType == right.nodeType && this.nodeType == 'M' { // manager desks.
-				cc.m = append(cc.m, Pair{i, j, i, j + 1})
-			} else { // mixed desks.
-				cc.x = append(cc.x, Pair{i, j, i, j + 1})
-			}
-		}
-	}
-	// check down.
-	if i+1 < office.H {
-		down := office.layout[i+1][j]
-		if down.nodeType != '#' {
-			// assign the pair (this, down) to the corresponding slice.
-			if this.nodeType == down.nodeType && this.nodeType == '_' { // developer desks.
-				cc.d = append(cc.d, Pair{i, j, i + 1, j})
-			} else if this.nodeType == down.nodeType && this.nodeType == 'M' { // manager desks.
-				cc.m = append(cc.m, Pair{i, j, i + 1, j})
-			} else { // mixed desks.
-				cc.x = append(cc.x, Pair{i, j, i + 1, j})
-			}
-		}
-	}
-}
-
 func (office *Office) expandConnectedComponent(cc *ConnectedComponent, i, j int) {
 	// check if the position is valid.
 	if i >= 0 && i < office.H && j >= 0 && j < office.W {
 		if office.layout[i][j].nodeType != '#' && office.layout[i][j].ccid == 0 {
 			// assign ccid.
 			office.layout[i][j].ccid = cc.ccid
-			// check for nearby pairs (only right and down).
-			office.checkRightDownPair(cc, i, j)
+			// increment count.
+			cc.count++
 			// expand up.
 			office.expandConnectedComponent(cc, i-1, j)
 			// expand down.
@@ -88,7 +33,7 @@ func (office *Office) getConnectedComponents() []ConnectedComponent {
 			if office.layout[i][j].nodeType != '#' && office.layout[i][j].ccid == 0 {
 				// found new tile which is not allocated to any connected component.
 				// create new connected component.
-				cc := NewCC(ccid)
+				cc := NewCC(ccid, Pos{i, j})
 				ccid++
 				// expand cc.
 				office.expandConnectedComponent(&cc, i, j)

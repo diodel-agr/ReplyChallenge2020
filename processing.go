@@ -60,11 +60,38 @@ func (r Replyer) totalPotential(s Replyer, skillCount int) int {
 	return tp
 }
 
+func (d Data) updateScoreMap(r, s *Replyer, score int) {
+	// update r -> s.
+	//obtain map.
+	sm := (*d.scoreMap)[r]
+	// initialise map.
+	if sm == nil {
+		sm = make(map[*Replyer]int)
+		(*d.scoreMap)[r] = sm
+	}
+	// update map.
+	sm[s] = score
+	// update s -> r.
+	//obtain map.
+	sm = (*d.scoreMap)[s]
+	// initialise map.
+	if sm == nil {
+		sm = make(map[*Replyer]int)
+		(*d.scoreMap)[s] = sm
+	}
+	// update map.
+	sm[r] = score
+}
+
 // computeTotalPotential - function used to compute the total potential of all pairs of replyers (developers and managers)
-func (d Data) computeTotalPotential() *maxheap {
+func (d Data) computeTotalPotential() {
 	size := len(d.devs) + len(d.mans)
 	maxsize := int((size * size) / 2)
-	maxHeap := newMaxHeap(maxsize)
+	d.heapDev = newMaxHeap(maxsize)
+	d.heapMan = newMaxHeap(maxsize)
+	d.heapMix = newMaxHeap(maxsize)
+	sm := make(map[*Replyer]map[*Replyer]int)
+	d.scoreMap = &sm
 	skillCount := len(d.skills)
 	// devs.
 	for i := 0; i < len(d.devs); i++ {
@@ -72,13 +99,17 @@ func (d Data) computeTotalPotential() *maxheap {
 		for j := i + 1; j < len(d.devs); j++ {
 			value := d.devs[i].totalPotential(d.devs[j], skillCount)
 			heapEl := arrType{value, &d.devs[i], &d.devs[j]}
-			maxHeap.insert(heapEl)
+			d.heapDev.insert(heapEl)
+			// update scoreMap.
+			d.updateScoreMap(&d.devs[i], &d.devs[j], value)
 		}
 		// managers.
 		for j := 0; j < len(d.mans); j++ {
 			value := d.devs[i].totalPotential(d.mans[j], skillCount)
 			heapEl := arrType{value, &d.devs[i], &d.mans[j]}
-			maxHeap.insert(heapEl)
+			d.heapMix.insert(heapEl)
+			// update scoreMap.
+			d.updateScoreMap(&d.devs[i], &d.devs[j], value)
 		}
 	}
 	// mans.
@@ -87,9 +118,12 @@ func (d Data) computeTotalPotential() *maxheap {
 		for j := i + 1; j < len(d.mans); j++ {
 			value := d.mans[i].totalPotential(d.mans[j], skillCount)
 			heapEl := arrType{value, &d.mans[i], &d.mans[j]}
-			maxHeap.insert(heapEl)
+			d.heapMan.insert(heapEl)
+			// update scoreMap.
+			d.updateScoreMap(&d.devs[i], &d.devs[j], value)
 		}
 	}
-	maxHeap.buildMaxHeap()
-	return maxHeap
+	d.heapDev.buildMaxHeap()
+	d.heapMan.buildMaxHeap()
+	d.heapMix.buildMaxHeap()
 }
