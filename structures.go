@@ -72,9 +72,8 @@ type Office struct {
 }
 
 func (o Office) toString() string {
-	result := "Office size: " + strconv.FormatInt(int64(o.H), IntConvBase10) +
-		"x" + strconv.FormatInt(int64(o.W), IntConvBase10) + "\n"
-	result = result + "Vacant places: " + strconv.FormatInt(int64(o.vacant), IntConvBase10) + "\n"
+	result := "Office size: " + strconv.FormatInt(int64(o.H), intConvBase10) +
+		"x" + strconv.FormatInt(int64(o.W), intConvBase10) + "\n"
 	for i := 0; i < o.H; i++ {
 		for j := 0; j < o.W; j++ {
 			result = result + o.layout[i][j].toString()
@@ -119,17 +118,18 @@ func (d Data) toString() string {
 	// companies.
 	result += "\nCompanies: " + fmt.Sprintf("%v", d.companies) + "\n"
 	// skills.
-	result += "\nSkills: " + fmt.Sprintf("%v", d.skills)
+	result += "\nSkills: " + fmt.Sprintf("%v", d.skills) + "\n"
 	// heapDev.
-	result += "HeapDev: " + d.heapDev.toString() + "\n"
+	result += "HeapDev: " + fmt.Sprintf("%v", d.heapDev) + "\n"
 	// heapMan.
-	result += "HeapMan: " + d.heapMan.toString() + "\n"
+	result += "HeapMan: " + fmt.Sprintf("%v", d.heapMan) + "\n"
 	// heapMix.
-	result += "HeapMix: " + d.heapMix.toString() + "\n"
+	result += "HeapMix: " + fmt.Sprintf("%v", d.heapMix) + "\n"
 	// scoreMap.
-	for i := 0; i < len(d.scoreMap); i++ {
-		result += d.scoreMap[i] + "\n"
-	}
+	// m := *(d.scoreMap)
+	// for i := 0; i < len(m); i++ {
+	// 	result += m[i] + "\n"
+	// }
 	return result
 }
 

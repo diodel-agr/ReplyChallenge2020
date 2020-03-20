@@ -60,7 +60,7 @@ func (r Replyer) totalPotential(s Replyer, skillCount int) int {
 	return tp
 }
 
-func (d Data) updateScoreMap(r, s *Replyer, score int) {
+func (d *Data) updateScoreMap(r, s *Replyer, score int) {
 	// update r -> s.
 	//obtain map.
 	sm := (*d.scoreMap)[r]
@@ -84,7 +84,7 @@ func (d Data) updateScoreMap(r, s *Replyer, score int) {
 }
 
 // computeTotalPotential - function used to compute the total potential of all pairs of replyers (developers and managers)
-func (d Data) computeTotalPotential() {
+func (d *Data) computeTotalPotential() {
 	size := len(d.devs) + len(d.mans)
 	maxsize := int((size * size) / 2)
 	d.heapDev = newMaxHeap(maxsize)
