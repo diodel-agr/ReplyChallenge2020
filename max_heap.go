@@ -3,6 +3,7 @@
 package main
 
 import "fmt"
+import "strconv"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -115,4 +116,12 @@ func (m *maxheap) remove() arrType {
 	m.size--
 	m.downHeapify(0)
 	return top
+}
+
+func (m maxheap) toString() string {
+	result := ""
+	for i := 0; i < m.size; i++ {
+		result += strconv.Itoa(m.heapArray.get(i).value) + " "
+	}
+	return result
 }

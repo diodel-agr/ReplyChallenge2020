@@ -15,12 +15,20 @@ const (
 	replyerMan byte = 'm'
 )
 
+const (
+	nodeWall    byte = '#'
+	nodeDeskDev byte = '_'
+	nodeDeskMan byte = 'M'
+)
+
 // Replyer - structure used to store the information of a replyer (developer or manager)
+// @replID: the id of the replyer.
 // @replType: m (manager) or d (developer)
 // @company: the id of the company.
 // @bonus: the replyer bonus.
 // @skills: slice storing the skill ids.
 type Replyer struct {
+	replID   int
 	replType byte
 	company  int
 	bonus    int
@@ -28,7 +36,7 @@ type Replyer struct {
 }
 
 func (r Replyer) toString() string {
-	result := string(r.replType) + " " +
+	result := strconv.Itoa(r.replID) + " " + string(r.replType) + " " +
 		strconv.FormatInt(int64(r.company), intConvBase10) + " " +
 		strconv.FormatInt(int64(r.bonus), intConvBase10)
 	if r.skills != nil {
@@ -42,23 +50,27 @@ func (r Replyer) toString() string {
 
 }
 
-const (
-	nodeWall    byte = '#'
-	nodeDeskDev byte = '_'
-	nodeDeskMan byte = 'M'
-)
+// Pos - structure used to store the position on the map (office floor).
+type Pos struct {
+	x, y int
+}
 
 // Node - structure used to store the type of the floor element: wall, developer desk or manager desk.
+// @ccid: the id of the connected component allocated to this node.
 // @nodeType: character used to code the type of the element.
-// @occupant: pointer to a Replyer object.
+// @available: tells if the node has an allocated replyer.
+// @postion: the position of this node on the map.
 type Node struct {
-	ccid     int  // connected component id.
-	nodeType byte // '#' or '_' or 'M'.
-	occupant *Replyer
+	ccid      int  // connected component id.
+	nodeType  byte // '#' or '_' or 'M'.
+	available bool
+	position  Pos
+	occupant  *Replyer
 }
 
 func (n Node) toString() string {
-	return "(" + strconv.Itoa(n.ccid) + ")" + string(n.nodeType)
+	return string(n.nodeType)
+	//return "(" + strconv.Itoa(n.ccid) + ")" + string(n.nodeType)
 }
 
 // Office - structure used to store the information regarding the floor.
@@ -76,7 +88,7 @@ func (o Office) toString() string {
 		"x" + strconv.FormatInt(int64(o.W), intConvBase10) + "\n"
 	for i := 0; i < o.H; i++ {
 		for j := 0; j < o.W; j++ {
-			result = result + o.layout[i][j].toString()
+			result = result + o.layout[i][j].toString() + " "
 		}
 		result = result + "\n"
 	}
@@ -120,11 +132,20 @@ func (d Data) toString() string {
 	// skills.
 	result += "\nSkills: " + fmt.Sprintf("%v", d.skills) + "\n"
 	// heapDev.
-	result += "HeapDev: " + fmt.Sprintf("%v", d.heapDev) + "\n"
+	//result += "HeapDev: " + fmt.Sprintf("%v", d.heapDev.toString()) + "\n"
+	if d.heapDev != nil {
+		result += "HeapDev: " + d.heapDev.toString() + "\n"
+	}
 	// heapMan.
-	result += "HeapMan: " + fmt.Sprintf("%v", d.heapMan) + "\n"
+	//result += "HeapMan: " + fmt.Sprintf("%v", d.heapMan.toString()) + "\n"
+	if d.heapMan != nil {
+		result += "HeapMan: " + d.heapMan.toString() + "\n"
+	}
 	// heapMix.
-	result += "HeapMix: " + fmt.Sprintf("%v", d.heapMix) + "\n"
+	//result += "HeapMix: " + fmt.Sprintf("%v", d.heapMix.toString()) + "\n"
+	if d.heapMix != nil {
+		result += "HeapMix: " + d.heapMix.toString() + "\n"
+	}
 	// scoreMap.
 	// m := *(d.scoreMap)
 	// for i := 0; i < len(m); i++ {
@@ -133,25 +154,46 @@ func (d Data) toString() string {
 	return result
 }
 
-// Pos - structure used to store the position of a replyer.
-type Pos struct {
-	x, y int
-}
-
 // Pair - structure used to store a pair of desks.
 // The pairs can be either developer-developer, manager-manager or mixed.
+// @node0, @node1: the nodes of this pair.
+// @repl0, repl1: the replyers of this pair.
 type Pair struct {
-	pos0, pos1 Pos
+	node0, node1 *Node
 }
 
 // ConnectedComponent - structure used to store the information regarding a connected component.
+// @id: the d of the component.
+// @pairD: pairs of developer-developer desks.
+// @pairM: pairs of manager-manager desks.
+// @pairX: pairs of developer-manager desks.
+// @single: nodes which have not been allocated to a pair.
 type ConnectedComponent struct {
-	ccid  int // id of the component.
-	count int // the number of elements in the component.
-	pos   Pos // the position of the first element of this component.
+	ccid                int
+	pairD, pairM, pairX []Pair
+	single              []*Node
+}
+
+func (cc *ConnectedComponent) toString() string {
+	result := strconv.Itoa(cc.ccid) + "\npairD: "
+	for _, d := range cc.pairD {
+		result += strconv.Itoa(d.node0.position.x) + ":" + strconv.Itoa(d.node0.position.y) + "/" +
+			strconv.Itoa(d.node1.position.x) + ":" + strconv.Itoa(d.node1.position.y) + " "
+	}
+	result += "\npairM: "
+	for _, d := range cc.pairM {
+		result += strconv.Itoa(d.node0.position.x) + ":" + strconv.Itoa(d.node0.position.y) + "/" +
+			strconv.Itoa(d.node1.position.x) + ":" + strconv.Itoa(d.node1.position.y) + " "
+	}
+	result += "\npairX: "
+	for _, d := range cc.pairX {
+		result += strconv.Itoa(d.node0.position.x) + ":" + strconv.Itoa(d.node0.position.y) + "/" +
+			strconv.Itoa(d.node1.position.x) + ":" + strconv.Itoa(d.node1.position.y) + " "
+	}
+	return result
 }
 
 // NewCC - function used to create a new ConnectedComponent variable.
-func NewCC(id int, pos Pos) ConnectedComponent {
-	return ConnectedComponent{id, 0, pos}
+func NewCC(id int) ConnectedComponent {
+	return ConnectedComponent{id, []Pair{}, []Pair{}, []Pair{}, []*Node{}}
 }

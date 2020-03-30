@@ -84,6 +84,7 @@ func (d *Data) updateScoreMap(r, s *Replyer, score int) {
 }
 
 // computeTotalPotential - function used to compute the total potential of all pairs of replyers (developers and managers)
+// and the max-heaps.
 func (d *Data) computeTotalPotential() {
 	size := len(d.devs) + len(d.mans)
 	maxsize := int((size * size) / 2)

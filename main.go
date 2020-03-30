@@ -9,7 +9,9 @@ func main() {
 	data := *readFile("input/", "a_solar.txt")
 	// get best solution :)
 	solution := findSolution(&data)
-	for _, s := range solution {
-		fmt.Println(s)
-	}
+	fmt.Println("\nThe solution:\n" + solution)
 }
+
+// getAvailableNeighbor
+// this function may be improved by returning all the available neighbors and
+// choose the one which has the highest score regarding to the one at [i, j]

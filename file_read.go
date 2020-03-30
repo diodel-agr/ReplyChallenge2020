@@ -50,7 +50,7 @@ func readMap(r *bufio.Reader, W, H int) *[][]Node {
 		line, err := readln(r)
 		check(err)
 		for j := 0; j < W; j++ {
-			layout[i][j] = Node{0, line[j], nil}
+			layout[i][j] = Node{0, line[j], true, Pos{i, j}, nil}
 		}
 	}
 	return &layout
@@ -62,7 +62,7 @@ func readDevs(r *bufio.Reader, data *Data, cid, sid *int) *[]Replyer {
 	D, err := strconv.ParseInt(line, intConvBase10, intBitSize64) // numbers of developers.
 	check(err)
 	// read D developers.
-	devs := make([]Replyer, D)
+	devs := []Replyer{}
 	for i := 0; i < int(D); i++ {
 		line, err = readln(r)
 		check(err)
@@ -85,7 +85,7 @@ func readDevs(r *bufio.Reader, data *Data, cid, sid *int) *[]Replyer {
 		S, err := strconv.ParseInt(line[b+1:s], intConvBase10, intBitSize64) // number of skills.
 		check(err)
 		// skills.
-		setOfSkills := make([]int, S)
+		setOfSkills := []int{}
 		for j := 0; j < int(S); j++ {
 			t := strings.IndexAny(line[s+1:], " \n")
 			if t == -1 {
@@ -100,11 +100,11 @@ func readDevs(r *bufio.Reader, data *Data, cid, sid *int) *[]Replyer {
 				data.skills[T] = *sid
 				*sid = *sid + 1
 			}
-			setOfSkills[j] = data.skills[T]
+			setOfSkills = append(setOfSkills, data.skills[T])
 			s = t
 		}
 		// create new developer.
-		devs[i] = Replyer{'d', data.companies[C], int(B), setOfSkills}
+		devs = append(devs, Replyer{i, 'd', data.companies[C], int(B), setOfSkills})
 	}
 	return &devs
 }
@@ -115,7 +115,7 @@ func readMans(r *bufio.Reader, data *Data, cid, sid *int) *[]Replyer {
 	M, err := strconv.ParseInt(line, intConvBase10, intBitSize64) // numbers of managers.
 	check(err)
 	// read managers.
-	mans := make([]Replyer, M)
+	mans := []Replyer{}
 	for i := 0; i < int(M); i++ {
 		line, err = readln(r)
 		check(err)
@@ -137,7 +137,7 @@ func readMans(r *bufio.Reader, data *Data, cid, sid *int) *[]Replyer {
 		B, err := strconv.ParseInt(line[c+1:b], intConvBase10, intBitSize64) // bonus.
 		check(err)
 		// create new manager.
-		mans[i] = Replyer{'m', data.companies[C], int(B), nil}
+		mans = append(mans, Replyer{i + len(data.devs), 'm', data.companies[C], int(B), nil})
 	}
 	return &mans
 }
@@ -159,10 +159,11 @@ func readFile(path string, fname string) *Data {
 	skills := make(map[string]int)
 	sid := 1 // skill id.
 	data := Data{office, nil, nil, companies, skills, nil, nil, nil, nil}
+	// read developers.
 	devs := readDevs(r, &data, &cid, &sid)
+	data.devs = *devs
 	// read the managers.
 	mans := readMans(r, &data, &cid, &sid)
-	data.devs = *devs
 	data.mans = *mans
 	return &data
 }
