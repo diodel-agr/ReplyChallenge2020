@@ -175,21 +175,25 @@ type ConnectedComponent struct {
 }
 
 func (cc *ConnectedComponent) toString() string {
-	result := strconv.Itoa(cc.ccid) + "\npairD: "
-	for _, d := range cc.pairD {
-		result += strconv.Itoa(d.node0.position.x) + ":" + strconv.Itoa(d.node0.position.y) + "/" +
-			strconv.Itoa(d.node1.position.x) + ":" + strconv.Itoa(d.node1.position.y) + " "
-	}
-	result += "\npairM: "
-	for _, d := range cc.pairM {
-		result += strconv.Itoa(d.node0.position.x) + ":" + strconv.Itoa(d.node0.position.y) + "/" +
-			strconv.Itoa(d.node1.position.x) + ":" + strconv.Itoa(d.node1.position.y) + " "
-	}
-	result += "\npairX: "
-	for _, d := range cc.pairX {
-		result += strconv.Itoa(d.node0.position.x) + ":" + strconv.Itoa(d.node0.position.y) + "/" +
-			strconv.Itoa(d.node1.position.x) + ":" + strconv.Itoa(d.node1.position.y) + " "
-	}
+	result := strconv.Itoa(cc.ccid) + " pairD: " + strconv.Itoa(len(cc.pairD)) +
+		" pairM: " + strconv.Itoa(len(cc.pairM)) + " pairX: " +
+		strconv.Itoa(len(cc.pairX)) + " single: " + strconv.Itoa(len(cc.single))
+	/*
+		for _, d := range cc.pairD {
+			result += strconv.Itoa(d.node0.position.x) + ":" + strconv.Itoa(d.node0.position.y) + "/" +
+				strconv.Itoa(d.node1.position.x) + ":" + strconv.Itoa(d.node1.position.y) + " "
+		}
+		result += "\npairM: "
+		for _, d := range cc.pairM {
+			result += strconv.Itoa(d.node0.position.x) + ":" + strconv.Itoa(d.node0.position.y) + "/" +
+				strconv.Itoa(d.node1.position.x) + ":" + strconv.Itoa(d.node1.position.y) + " "
+		}
+		result += "\npairX: "
+		for _, d := range cc.pairX {
+			result += strconv.Itoa(d.node0.position.x) + ":" + strconv.Itoa(d.node0.position.y) + "/" +
+				strconv.Itoa(d.node1.position.x) + ":" + strconv.Itoa(d.node1.position.y) + " "
+		}
+	*/
 	return result
 }
 

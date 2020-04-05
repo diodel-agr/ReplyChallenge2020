@@ -5,40 +5,71 @@ package main
 // @skillCount: the number of skills.
 // @return: the working potentian of the two replyers.
 func (r Replyer) workingPotential(s Replyer, skillCount int) int {
-	// determine the common and different skills.
-	skills := make([]int8, 1+skillCount)
-	size := len(r.skills)
-	if len(s.skills) < len(r.skills) {
-		size = len(s.skills)
-	}
-	i := 0
-	for ; i < size; i++ {
-		skills[r.skills[i]]++
-		skills[s.skills[i]]++
-	}
-	src := r.skills[:]
-	if len(s.skills) > len(r.skills) {
-		src = s.skills[:]
-		size = len(s.skills)
-	} else {
-		size = len(r.skills)
-	}
-	for ; i < size; i++ {
-		skills[src[i]]++
-	}
-	// count the common and different skills.
+	// skills := make(map[int]int)
+	// common := 0
+	// distinct := 0
+	// for i := 0; i < len(r.skills); i++ {
+	// 	skills[r.skills[i]] = 1
+	// 	distinct++
+	// }
+	// for i := 0; i < len(s.skills); i++ {
+	// 	if skills[s.skills[i]] == 1 {
+	// 		common++
+	// 		distinct--
+	// 	} else {
+	// 		distinct++
+	// 	}
+	// }
+	//
+	skills := make([]uint8, 1+skillCount)
 	common := 0
 	distinct := 0
-	for i = 0; i < len(skills); i++ {
-		if skills[i] == 1 {
+	for i := 0; i < len(r.skills); i++ {
+		skills[r.skills[i]]++
+		distinct++
+	}
+	for i := 0; i < len(s.skills); i++ {
+		if skills[s.skills[i]] == 0 {
 			distinct++
-		} else if skills[i] == 2 {
+		} else if skills[s.skills[i]] == 1 {
 			common++
+			distinct--
 		}
 	}
+	//
+	// determine the common and different skills.
+	// skills := make([]uint8, 1+skillCount)
+	// size := len(r.skills)
+	// if len(s.skills) < len(r.skills) {
+	// 	size = len(s.skills)
+	// }
+	// i := 0
+	// for ; i < size; i++ {
+	// 	skills[r.skills[i]]++
+	// 	skills[s.skills[i]]++
+	// }
+	// src := r.skills[:]
+	// if len(s.skills) > len(r.skills) {
+	// 	src = s.skills[:]
+	// 	size = len(s.skills)
+	// } else {
+	// 	size = len(r.skills)
+	// }
+	// for ; i < size; i++ {
+	// 	skills[src[i]]++
+	// }
+	// // count the common and different skills.
+	// common := 0
+	// distinct := 0
+	// for i = 0; i < len(skills); i++ {
+	// 	if skills[i] == 1 {
+	// 		distinct++
+	// 	} else if skills[i] == 2 {
+	// 		common++
+	// 	}
+	// }
 	// count working potential.
-	wp := common * (distinct - common)
-	return wp
+	return common * (distinct - common)
 }
 
 // bonusPotential - function used to compute the bonus potential of 2 replyers.

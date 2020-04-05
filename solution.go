@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"time"
 )
 
 func (cc *ConnectedComponent) addPair(n0, n1 *Node) {
@@ -152,7 +153,7 @@ func (data *Data) placeReplyer(cc *ConnectedComponent, score *int, placed *map[*
 		for heap.size > 0 {
 			devs := heap.remove()
 			// check wether either of the developers have already been placed.
-			if (*placed)[devs.r] != nil || (*placed)[devs.s] != nil {
+			if (*placed)[devs.r] != nil || (*placed)[devs.s] != nil { // TODO: this condition could be improoved.
 				continue
 			}
 			// place developers.
@@ -163,16 +164,16 @@ func (data *Data) placeReplyer(cc *ConnectedComponent, score *int, placed *map[*
 				// mark them as placed.
 				(*placed)[devs.r] = p.node0
 				(*placed)[devs.s] = p.node1
-				fmt.Println("Placed dev", devs.r.replID, "on", p.node0.position.x, p.node0.position.y)
-				fmt.Println("Placed dev", devs.s.replID, "on", p.node1.position.x, p.node1.position.y)
+				// fmt.Println("Placed dev", devs.r.replID, "on", p.node0.position.x, p.node0.position.y)
+				// fmt.Println("Placed dev", devs.s.replID, "on", p.node1.position.x, p.node1.position.y, "+", devs.value)
 			} else {
 				p.node0.occupant = devs.s
 				p.node1.occupant = devs.r
 				// mark them as placed.
 				(*placed)[devs.s] = p.node0
 				(*placed)[devs.r] = p.node1
-				fmt.Println("Placed dev", devs.s.replID, "on", p.node0.position.x, p.node0.position.y)
-				fmt.Println("Placed dev", devs.r.replID, "on", p.node1.position.x, p.node1.position.y)
+				// fmt.Println("Placed dev", devs.s.replID, "on", p.node0.position.x, p.node0.position.y)
+				// fmt.Println("Placed dev", devs.r.replID, "on", p.node1.position.x, p.node1.position.y, "+", devs.value)
 			}
 			// update score.
 			*score = *score + devs.value
@@ -184,7 +185,6 @@ func (data *Data) placeReplyer(cc *ConnectedComponent, score *int, placed *map[*
 			// place this pair into the 'single' slice.
 			cc.addSingle(p.node0)
 			cc.addSingle(p.node1)
-			fmt.Println("Empty heap OR No pairs found !")
 			break
 		}
 	}
@@ -197,19 +197,17 @@ func (data *Data) placeReplyer(cc *ConnectedComponent, score *int, placed *map[*
 func (data *Data) composeResult(placed *map[*Replyer]*Node) string {
 	result := ""
 	for i := range data.devs {
-		//fmt.Println((*placed)[&data.devs[i]])
 		if (*placed)[&data.devs[i]] != nil {
 			pos := (*placed)[&data.devs[i]].position
-			result += strconv.Itoa(pos.x) + " " + strconv.Itoa(pos.y) + "\n"
+			result += strconv.Itoa(pos.y) + " " + strconv.Itoa(pos.x) + "\n"
 		} else {
 			result += "X\n"
 		}
 	}
 	for i := range data.mans {
-		//fmt.Println((*placed)[&data.mans[i]])
 		if (*placed)[&data.mans[i]] != nil {
 			pos := (*placed)[&data.mans[i]].position
-			result += strconv.Itoa(pos.x) + " " + strconv.Itoa(pos.y) + "\n"
+			result += strconv.Itoa(pos.y) + " " + strconv.Itoa(pos.x) + "\n"
 		} else {
 			result += "X\n"
 		}
@@ -222,11 +220,17 @@ func (data *Data) composeResult(placed *map[*Replyer]*Node) string {
 // @result: the result.
 func findSolution(data *Data) string {
 	// compute total potential and create max-heaps.
+	start := time.Now()
 	data.computeTotalPotential()
-	fmt.Println(data.office.toString())
-	//fmt.Println(data.toString())
+	t := time.Now()
+	elapsed := t.Sub(start)
+	fmt.Println("Total potentials computed.", elapsed)
 	// obtain connected components.
+	start = time.Now()
 	conncomp := data.office.getConnectedComponents()
+	t = time.Now()
+	elapsed = t.Sub(start)
+	fmt.Println("Connected components computed.", elapsed)
 	// obtain a solution.
 	placed := make(map[*Replyer]*Node) // map of placed replyers.
 	score := 0                         // the score of the current arrangement.
@@ -236,22 +240,13 @@ func findSolution(data *Data) string {
 		fmt.Println("Working with cc: ", cc.toString())
 		// for each pair of replyers in this cc's slices, find the best replyers.
 		// developers pair.
-		fmt.Println("Iterating dev pair:", cc.pairD)
 		data.placeReplyer(&cc, &score, &placed, &cc.pairD, data.heapDev)
 		// managers pair.
-		fmt.Println("Iterating man pair.")
 		data.placeReplyer(&cc, &score, &placed, &cc.pairM, data.heapMan)
 		// mixed pair.
-		fmt.Println("Iterating mixed pair.")
 		data.placeReplyer(&cc, &score, &placed, &cc.pairX, data.heapMix)
 	}
-	// print placed.
-	// fmt.Println("Placed:")
-	// for r, n := range placed {
-	// 	fmt.Println(r.replID, "-", n.position.x, n.position.y)
-	// }
-	// fmt.Println("----")
-	// iterate over each connected component to fill the 'single' nodes.
+	// TODO: iterate over each connected component to fill the 'single' nodes.
 	// for _, cc := range conncomp {
 	// 	for _, n := range cc.single {
 	// 		// based on the neighbors, find the best match.
@@ -259,9 +254,12 @@ func findSolution(data *Data) string {
 	// 	}
 	// }
 	// print score and scoreMap.
-	for _, r := range *(data.scoreMap) {
-		fmt.Println(r)
-	}
+	// for _, r := range *(data.scoreMap) {
+	// 	for _, s := range r {
+	// 		fmt.Print(s, " ")
+	// 	}
+	// 	fmt.Println()
+	// }
 	fmt.Println("Score:", score)
 	// compose the result and return.
 	return data.composeResult(&placed)
