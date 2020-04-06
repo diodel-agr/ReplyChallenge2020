@@ -164,16 +164,12 @@ func (data *Data) placeReplyer(cc *ConnectedComponent, score *int, placed *map[*
 				// mark them as placed.
 				(*placed)[devs.r] = p.node0
 				(*placed)[devs.s] = p.node1
-				// fmt.Println("Placed dev", devs.r.replID, "on", p.node0.position.x, p.node0.position.y)
-				// fmt.Println("Placed dev", devs.s.replID, "on", p.node1.position.x, p.node1.position.y, "+", devs.value)
 			} else {
 				p.node0.occupant = devs.s
 				p.node1.occupant = devs.r
 				// mark them as placed.
 				(*placed)[devs.s] = p.node0
 				(*placed)[devs.r] = p.node1
-				// fmt.Println("Placed dev", devs.s.replID, "on", p.node0.position.x, p.node0.position.y)
-				// fmt.Println("Placed dev", devs.r.replID, "on", p.node1.position.x, p.node1.position.y, "+", devs.value)
 			}
 			// update score.
 			*score = *score + devs.value

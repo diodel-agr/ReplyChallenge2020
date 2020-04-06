@@ -10,7 +10,7 @@ func main() {
 	fnamelist := []string{"a_solar.txt", "b_dream.txt", "c_soup.txt", "d_maelstrom.txt", "e_igloos.txt", "f_glitch.txt"}
 	pathInput := "input/"
 	pathOutput := "output/"
-	name := fnamelist[1]
+	name := fnamelist[0]
 	fmt.Println("Processing file:", name)
 	// read data from file.
 	start := time.Now()
@@ -40,3 +40,5 @@ func main() {
 
 // placeReplyer - when the (r, s) pair has to be placed, id only one of them
 // has allready been placed, find wether there is a free place next to it.
+
+// computeTotalPotential - may be improved using dynamic programming.
